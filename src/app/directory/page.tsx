@@ -417,7 +417,7 @@ export default function PersonnelPage() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="space-y-6">
         {/* Header with search */}
         <div className="flex items-center">
           <div className="relative">

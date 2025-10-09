@@ -137,7 +137,6 @@ export default function IssuesPage() {
           <Table className="min-w-full">
             <TableHeaderRaw>
               <TableRowRaw>
-                <TableHeadRaw>ID</TableHeadRaw>
                 <TableHeadRaw>标题</TableHeadRaw>
                 <TableHeadRaw>类型</TableHeadRaw>
                 <TableHeadRaw>优先级</TableHeadRaw>
@@ -164,7 +163,6 @@ export default function IssuesPage() {
               ) : filteredIssues.length > 0 ? (
                 filteredIssues.map((issue) => (
                   <TableRowRaw key={issue.id}>
-                    <TableCellRaw className="font-mono text-sm">{issue.id}</TableCellRaw>
                     <TableCellRaw>
                       <div className="max-w-md">
                         <div className="font-medium">{issue.title}</div>
@@ -220,7 +218,7 @@ export default function IssuesPage() {
                 ))
               ) : (
                 <TableRowRaw>
-                  <TableCellRaw colSpan={9} className="h-24 text-center">
+                  <TableCellRaw colSpan={8} className="h-24 text-center">
                     暂无Issues数据
                   </TableCellRaw>
                 </TableRowRaw>

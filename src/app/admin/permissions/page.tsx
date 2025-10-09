@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { adminApi, userApi } from '@/lib/api';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 
 export default function PermissionsHome() {
@@ -33,7 +34,7 @@ export default function PermissionsHome() {
 
   useEffect(() => { load(); }, []);
 
-  const adminRoleNames = new Set(['super_admin','admin','hr_manager']);
+  const adminRoleNames = new Set(['super_admin','admin','hr_manager','project_manager']);
   const adminUsers = users.filter(u => (u.roles || []).some(r => adminRoleNames.has(r.name)));
 
   const handleSelectUser = async (userId: string) => {
@@ -83,23 +84,31 @@ export default function PermissionsHome() {
             </SelectContent>
           </Select>
           <Button disabled={!selectedUserId || saving} onClick={save}>{saving ? '保存中...' : '保存'}</Button>
-          <Button variant="outline" asChild><Link href="/admin/permissions/grants">临时授权</Link></Button>
         </div>
 
         {selectedUserId && (
           <div className="space-y-3">
             <div className="text-sm text-muted-foreground">勾选下列角色以赋予权限</div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {roles.map(role => (
-                <label key={role.id} className="flex items-center gap-2 border rounded-md p-3">
-                  <input
-                    type="checkbox"
-                    checked={selectedRoles.includes(role.name)}
-                    onChange={() => toggleRole(role.name)}
-                  />
-                  <span>{role.name}</span>
-                </label>
-              ))}
+              {roles.map(role => {
+                const cnMap: Record<string, string> = {
+                  'super_admin': '超级管理员',
+                  'admin': '管理员',
+                  'hr_manager': 'HR管理员',
+                  'project_manager': '主管',
+                  'member': '普通成员',
+                }
+                const displayName = cnMap[role.name] || role.name
+                return (
+                  <label key={role.id} className="flex items-center gap-2 border rounded-md p-3 cursor-pointer hover:bg-muted/50">
+                    <Checkbox
+                      checked={selectedRoles.includes(role.name)}
+                      onCheckedChange={() => toggleRole(role.name)}
+                    />
+                    <span>{displayName}</span>
+                  </label>
+                )
+              })}
             </div>
           </div>
         )}
@@ -115,13 +124,23 @@ export default function PermissionsHome() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {adminUsers.map(u => (
-                <TableRow key={u.id}>
-                  <TableCell>{u.name}</TableCell>
-                  <TableCell>{u.email}</TableCell>
-                  <TableCell>{(u.roles || []).map(r => r.name).join('、')}</TableCell>
-                </TableRow>
-              ))}
+              {adminUsers.map(u => {
+                const cnMap: Record<string, string> = {
+                  'super_admin': '超级管理员',
+                  'admin': '管理员',
+                  'hr_manager': 'HR管理员',
+                  'project_manager': '主管',
+                  'member': '普通成员',
+                }
+                const roleNames = (u.roles || []).map(r => cnMap[r.name] || r.name).join('、')
+                return (
+                  <TableRow key={u.id}>
+                    <TableCell>{u.name}</TableCell>
+                    <TableCell>{u.email}</TableCell>
+                    <TableCell>{roleNames}</TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </div>

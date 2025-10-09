@@ -1215,24 +1215,8 @@ export const adminApi = {
     allowCrossBoundary?: boolean;
     scopeDepartmentId?: string;
   }) {
-    const query = `
-      mutation CreateGrant(
-        $granteeId: String!, $resource: String!, $fieldKey: String!, $action: String!,
-        $startAt: String!, $endAt: String!, $allowCrossBoundary: Boolean, $scopeDepartmentId: String
-      ) {
-        createTemporaryAccessGrant(
-          granteeId: $granteeId,
-          resource: $resource,
-          fieldKey: $fieldKey,
-          action: $action,
-          startAt: $startAt,
-          endAt: $endAt,
-          allowCrossBoundary: $allowCrossBoundary,
-          scopeDepartmentId: $scopeDepartmentId
-        )
-      }
-    `;
-    return graphqlRequest(query, input);
+    // 已移除：临时授权功能不再提供
+    throw new Error('temporary access grant is removed');
   },
 };
 

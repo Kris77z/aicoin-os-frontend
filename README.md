@@ -117,6 +117,35 @@ npm run dev
 - **多维搜索**: 姓名、部门、职位多字段搜索
 - **详情展示**: 个人信息和工作统计
 
+### 导航与面包屑
+
+- 统一采用顶部 `SiteHeader` 面包屑
+- `directory` 显示为“通讯录”，例如：`首页 > 通讯录 > 人员详情`
+
+### 权限与角色显示
+
+- 角色勾选与保存使用后端角色字段名（用于接口）
+- 页面展示采用中文名映射（可扩展）：
+  - super_admin → 超级管理员
+  - admin → 管理员
+  - hr_manager → HR管理员
+  - project_manager → 主管
+  - member → 普通成员
+
+### 字段可见性（两档方案）
+
+- **PUBLIC（公开）**：所有登录用户可见（如姓名、部门、职位、手机号、工作邮箱）
+- **CONFIDENTIAL（保密）**：仅管理员和同公司HR可见（如身份证、银行卡、合同、家庭成员）
+- 后端权限：
+  - `user_confidential:read` - 查看保密字段
+  - `export:confidential` - 导出保密字段
+- HR只能查看和导出**同公司**员工的保密信息，跨公司不可见
+
+### 已移除功能
+
+- 临时授权（Temporary Access Grant）功能已从导航、页面与 API 中移除；如需恢复，请在 UI 与 `adminApi` 中重新添加相应入口与方法
+- 旧三档权限（SENSITIVE/HIGHLY_SENSITIVE）已统一为两档（PUBLIC/CONFIDENTIAL）
+
 ## 🎨 设计系统
 
 ### 主题配置

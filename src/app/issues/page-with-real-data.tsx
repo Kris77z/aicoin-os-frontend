@@ -344,7 +344,6 @@ export default function IssuesPage() {
           <Table>
             <TableHeaderRaw>
               <TableRowRaw>
-                <TableHeadRaw>ID</TableHeadRaw>
                 <TableHeadRaw>类型</TableHeadRaw>
                 <TableHeadRaw>标题</TableHeadRaw>
                 <TableHeadRaw>状态</TableHeadRaw>
@@ -357,7 +356,6 @@ export default function IssuesPage() {
               {filteredIssues.length > 0 ? (
                 filteredIssues.map((issue) => (
                   <TableRowRaw key={issue.id}>
-                    <TableCellRaw className="font-mono text-sm">{issue.id}</TableCellRaw>
                     <TableCellRaw>
                       <Badge className={issueTypeConfig[issue.issueType]?.color}>
                         {issueTypeConfig[issue.issueType]?.label}
@@ -393,7 +391,7 @@ export default function IssuesPage() {
                 ))
               ) : (
                 <TableRowRaw>
-                  <TableCellRaw colSpan={7} className="h-24 text-center">
+                  <TableCellRaw colSpan={6} className="h-24 text-center">
                     {searchTerm ? '没有找到匹配的Issues' : '暂无Issues数据'}
                   </TableCellRaw>
                 </TableRowRaw>

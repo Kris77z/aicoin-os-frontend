@@ -40,8 +40,6 @@ function generateBreadcrumbs(pathname: string): BreadcrumbItem[] {
     
     if (segments[2] === 'preview') {
       breadcrumbs.push({ title: "权限预览" })
-    } else if (segments[2] === 'grants') {
-      breadcrumbs.push({ title: "临时授权" })
     } else if (segments[2] === 'fields') {
       breadcrumbs.push({ title: "字段管理" })
     } else if (segments[2] === 'visibility') {
@@ -54,7 +52,8 @@ function generateBreadcrumbs(pathname: string): BreadcrumbItem[] {
     const pageMap: Record<string, string> = {
       "requirements": "需求池",
       "kanban": "任务看板",
-      "issues": "Issues"
+      "issues": "Issues",
+      "directory": "通讯录"
     }
     
     segments.forEach((segment, index) => {

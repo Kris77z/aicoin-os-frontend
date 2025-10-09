@@ -117,13 +117,7 @@ export default function PersonnelManagementPage() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex-1"></div>
-          {/* 右侧按钮区域在搜索/筛选右侧 */}
-        </div>
-
+      <div className="space-y-6">
         {/* Search and Filter */}
         <div className="flex items-center gap-4 justify-between">
           <div className="relative">

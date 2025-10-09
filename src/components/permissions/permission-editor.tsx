@@ -148,26 +148,36 @@ export function PermissionEditor({ onUserSelect, targetUserId }: PermissionEdito
           <Label className="text-base font-medium">角色分配</Label>
           <ScrollArea className="h-[300px] w-full rounded-md border p-4">
             <div className="space-y-3">
-              {roles.map((role) => (
-                <div key={role.id} className="flex items-start space-x-3">
-                  <Checkbox
-                    id={role.id}
-                    checked={selectedRoles.includes(role.name)}
-                    onCheckedChange={(checked) => handleRoleToggle(role.name, checked as boolean)}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <label htmlFor={role.id} className="text-sm font-medium cursor-pointer">
-                      {role.name}
-                      {role.isSystem && (
-                        <Badge variant="outline" className="ml-2 text-xs">系统角色</Badge>
+              {roles.map((role) => {
+                const cnMap: Record<string, string> = {
+                  'super_admin': '超级管理员',
+                  'admin': '管理员',
+                  'hr_manager': 'HR管理员',
+                  'project_manager': '主管',
+                  'member': '普通成员',
+                }
+                const displayName = cnMap[role.name] || role.name
+                return (
+                  <div key={role.id} className="flex items-start space-x-3">
+                    <Checkbox
+                      id={role.id}
+                      checked={selectedRoles.includes(role.name)}
+                      onCheckedChange={(checked) => handleRoleToggle(role.name, checked as boolean)}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <label htmlFor={role.id} className="text-sm font-medium cursor-pointer">
+                        {displayName}
+                        {role.isSystem && (
+                          <Badge variant="outline" className="ml-2 text-xs">系统角色</Badge>
+                        )}
+                      </label>
+                      {role.description && (
+                        <p className="text-xs text-muted-foreground mt-1">{role.description}</p>
                       )}
-                    </label>
-                    {role.description && (
-                      <p className="text-xs text-muted-foreground mt-1">{role.description}</p>
-                    )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </ScrollArea>
         </div>

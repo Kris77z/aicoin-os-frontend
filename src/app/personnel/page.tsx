@@ -64,7 +64,13 @@ export default function PersonnelManagementPage() {
       ]);
       
       setUsers(usersRes.users?.users || []);
-      setDepartments(departmentsRes.departments || []);
+      
+      // 只显示叶子部门（没有子部门的最底层部门）
+      const allDepts = (departmentsRes.departments || []) as Department[];
+      const parentIds = new Set(allDepts.map(d => d.parentId).filter(Boolean));
+      const leafDepartments = allDepts.filter(d => !parentIds.has(d.id));
+      
+      setDepartments(leafDepartments);
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {

@@ -299,7 +299,7 @@ export default function PersonnelPage() {
 
     return nodes.reduce<TreeData[]>((filtered, node) => {
       const matchesSearch = node.name.toLowerCase().includes(term.toLowerCase()) ||
-        (node.type === 'user' && (node.data as User).email?.toLowerCase().includes(term.toLowerCase()));
+        (node.type === 'user' && node.data && (node.data as User).email?.toLowerCase().includes(term.toLowerCase()));
 
       const filteredChildren = node.children ? filterTree(node.children, term) : [];
 

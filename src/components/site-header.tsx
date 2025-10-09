@@ -35,15 +35,21 @@ function generateBreadcrumbs(pathname: string): BreadcrumbItem[] {
   }
   
   // 权限管理相关路径
-  else if (segments[0] === 'admin' && segments[1] === 'permissions') {
-    breadcrumbs.push({ title: "权限管理", href: "/admin/permissions" })
-    
-    if (segments[2] === 'preview') {
-      breadcrumbs.push({ title: "权限预览" })
-    } else if (segments[2] === 'fields') {
-      breadcrumbs.push({ title: "字段管理" })
-    } else if (segments[2] === 'visibility') {
-      breadcrumbs.push({ title: "可见性管理" })
+  else if (segments[0] === 'admin') {
+    if (segments[1] === 'permissions') {
+      breadcrumbs.push({ title: "人员管理", href: "/personnel" })
+      breadcrumbs.push({ title: "权限管理", href: "/admin/permissions" })
+      
+      if (segments[2] === 'preview') {
+        breadcrumbs.push({ title: "权限预览" })
+      } else if (segments[2] === 'fields') {
+        breadcrumbs.push({ title: "字段管理" })
+      } else if (segments[2] === 'visibility') {
+        breadcrumbs.push({ title: "可见性管理" })
+      }
+    } else if (segments[1] === 'fields') {
+      breadcrumbs.push({ title: "人员管理", href: "/personnel" })
+      breadcrumbs.push({ title: "字段配置" })
     }
   }
   

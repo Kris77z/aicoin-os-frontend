@@ -4,13 +4,32 @@ import Link from 'next/link';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { useEffect, useState } from 'react';
 import { adminApi, userApi } from '@/lib/api';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Search, Pencil } from 'lucide-react';
+import { Search, Pencil, X, InfoIcon } from 'lucide-react';
+
+// 角色中文映射
+const ROLE_CN_MAP: Record<string, string> = {
+  'super_admin': '超级管理员',
+  'admin': '管理员',
+  'hr_manager': 'HR管理员',
+  'project_manager': '主管',
+  'member': '普通成员',
+};
+
+// 角色说明
+const ROLE_DESCRIPTIONS: Record<string, string> = {
+  'super_admin': '拥有系统所有权限，可管理所有用户和数据',
+  'admin': '可管理用户、部门、项目等，但不能修改系统配置',
+  'hr_manager': '可查看和管理人员信息，包括保密字段',
+  'project_manager': '可管理项目和团队，查看项目成员信息',
+  'member': '普通成员，只能查看公开信息和编辑自己的资料',
+};
 
 export default function PermissionsHome() {
   const [users, setUsers] = useState<Array<{ id: string; name: string; email: string; roles: { id: string; name: string }[] }>>([]);
@@ -72,6 +91,26 @@ export default function PermissionsHome() {
       setSaving(false);
     }
   };
+  
+  // 移除用户的某个角色
+  const removeRole = async (userId: string, roleName: string) => {
+    if (!window.confirm(`确认移除角色"${ROLE_CN_MAP[roleName] || roleName}"？`)) {
+      return;
+    }
+    
+    try {
+      const user = users.find(u => u.id === userId);
+      if (!user) return;
+      
+      const newRoles = user.roles.filter(r => r.name !== roleName).map(r => r.name);
+      await adminApi.setUserRoles(userId, newRoles);
+      toast.success('已移除角色');
+      await load();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error('移除失败：' + msg);
+    }
+  };
 
   // 过滤用户列表
   const filteredUsers = users.filter(u => {
@@ -106,30 +145,46 @@ export default function PermissionsHome() {
                 <TableRow>
                   <TableHead>姓名</TableHead>
                   <TableHead>邮箱</TableHead>
-                  <TableHead>当前角色</TableHead>
-                  <TableHead>操作</TableHead>
+                  <TableHead>当前角色（点击 × 移除）</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsers.map(u => {
-                  const cnMap: Record<string, string> = {
-                    'super_admin': '超级管理员',
-                    'admin': '管理员',
-                    'hr_manager': 'HR管理员',
-                    'project_manager': '主管',
-                    'member': '普通成员',
-                  }
-                  const roleNames = (u.roles || []).map(r => cnMap[r.name] || r.name).join('、') || '无角色'
+                  const userRoles = u.roles || [];
                   return (
                     <TableRow key={u.id}>
                       <TableCell>{u.name}</TableCell>
                       <TableCell>{u.email}</TableCell>
-                      <TableCell>{roleNames}</TableCell>
                       <TableCell>
-                        <Button size="sm" variant="outline" onClick={() => handleSelectUser(u.id)}>
-                          <Pencil className="h-4 w-4 mr-1" />
-                          编辑权限
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                          {userRoles.length === 0 ? (
+                            <span className="text-muted-foreground text-sm">无角色</span>
+                          ) : (
+                            userRoles.map(role => (
+                              <Badge 
+                                key={role.id} 
+                                variant="secondary"
+                                className="gap-1 pr-1"
+                              >
+                                <span>{ROLE_CN_MAP[role.name] || role.name}</span>
+                                <button
+                                  onClick={() => removeRole(u.id, role.name)}
+                                  className="ml-1 rounded-full hover:bg-muted p-0.5"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            ))
+                          )}
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-6 px-2"
+                            onClick={() => handleSelectUser(u.id)}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )
@@ -159,23 +214,28 @@ export default function PermissionsHome() {
             </div>
             
             <div className="text-sm text-muted-foreground">勾选下列角色以赋予权限（可多选）</div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {roles.map(role => {
-                const cnMap: Record<string, string> = {
-                  'super_admin': '超级管理员',
-                  'admin': '管理员',
-                  'hr_manager': 'HR管理员',
-                  'project_manager': '主管',
-                  'member': '普通成员',
-                }
-                const displayName = cnMap[role.name] || role.name
+                const displayName = ROLE_CN_MAP[role.name] || role.name;
+                const description = ROLE_DESCRIPTIONS[role.name] || '';
                 return (
-                  <label key={role.id} className="flex items-center gap-2 border rounded-md p-3 cursor-pointer hover:bg-muted/50">
-                    <Checkbox
-                      checked={selectedRoles.includes(role.name)}
-                      onCheckedChange={() => toggleRole(role.name)}
-                    />
-                    <span>{displayName}</span>
+                  <label 
+                    key={role.id} 
+                    className="flex flex-col gap-2 border rounded-md p-3 cursor-pointer hover:bg-muted/50"
+                    title={description}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={selectedRoles.includes(role.name)}
+                        onCheckedChange={() => toggleRole(role.name)}
+                      />
+                      <span className="font-medium">{displayName}</span>
+                    </div>
+                    {description && (
+                      <div className="text-xs text-muted-foreground pl-6">
+                        {description}
+                      </div>
+                    )}
                   </label>
                 )
               })}
@@ -190,36 +250,55 @@ export default function PermissionsHome() {
         )}
 
         <div className="space-y-3">
-          <h3 className="text-lg font-medium">管理员列表</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">管理员列表</h3>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <InfoIcon className="h-4 w-4" />
+              <span>点击角色标签的 × 可快速移除</span>
+            </div>
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>姓名</TableHead>
                 <TableHead>邮箱</TableHead>
                 <TableHead>角色</TableHead>
-                <TableHead>操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {adminUsers.map(u => {
-                const cnMap: Record<string, string> = {
-                  'super_admin': '超级管理员',
-                  'admin': '管理员',
-                  'hr_manager': 'HR管理员',
-                  'project_manager': '主管',
-                  'member': '普通成员',
-                }
-                const roleNames = (u.roles || []).map(r => cnMap[r.name] || r.name).join('、')
+                const userRoles = u.roles || [];
                 return (
                   <TableRow key={u.id}>
                     <TableCell>{u.name}</TableCell>
                     <TableCell>{u.email}</TableCell>
-                    <TableCell>{roleNames}</TableCell>
                     <TableCell>
-                      <Button size="sm" variant="ghost" onClick={() => handleSelectUser(u.id)}>
-                        <Pencil className="h-4 w-4 mr-1" />
-                        编辑
-                      </Button>
+                      <div className="flex flex-wrap gap-2">
+                        {userRoles.map(role => (
+                          <Badge 
+                            key={role.id} 
+                            variant="secondary"
+                            className="gap-1 pr-1"
+                            title={ROLE_DESCRIPTIONS[role.name] || ''}
+                          >
+                            <span>{ROLE_CN_MAP[role.name] || role.name}</span>
+                            <button
+                              onClick={() => removeRole(u.id, role.name)}
+                              className="ml-1 rounded-full hover:bg-muted p-0.5"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-6 px-2"
+                          onClick={() => handleSelectUser(u.id)}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 )

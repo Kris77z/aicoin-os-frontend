@@ -42,7 +42,8 @@ export default function PersonnelManagementPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
+  const [selectedBusinessUnit, setSelectedBusinessUnit] = useState<string>(''); // 事业部筛选
+  const [selectedDepartment, setSelectedDepartment] = useState<string>(''); // 部门筛选
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState('');
   const [importing, setImporting] = useState(false);
@@ -65,18 +66,44 @@ export default function PersonnelManagementPage() {
       
       setUsers(usersRes.users?.users || []);
       
-      // 只显示叶子部门（没有子部门的最底层部门）
-      const allDepts = (departmentsRes.departments || []) as Department[];
-      const parentIds = new Set(allDepts.map(d => d.parentId).filter(Boolean));
-      const leafDepartments = allDepts.filter(d => !parentIds.has(d.id));
-      
-      setDepartments(leafDepartments);
+      // 保留所有部门数据（包括事业部和部门）用于筛选
+      setDepartments((departmentsRes.departments || []) as Department[]);
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
     }
   };
+  
+  // 获取所有事业部（parentId为null且有子部门的部门）
+  const businessUnits = departments.filter(d => {
+    if (d.parentId) return false;
+    // 检查是否有子部门
+    return departments.some(child => child.parentId === d.id);
+  });
+  
+  // 根据选中的事业部，获取其下的部门（叶子部门）
+  const getFilteredDepartments = () => {
+    if (!selectedBusinessUnit) return [];
+    
+    // 找出该事业部下的所有部门（递归查找所有子孙部门）
+    const getAllChildDepts = (parentId: string): Department[] => {
+      const children = departments.filter(d => d.parentId === parentId);
+      const allDescendants: Department[] = [...children];
+      children.forEach(child => {
+        allDescendants.push(...getAllChildDepts(child.id));
+      });
+      return allDescendants;
+    };
+    
+    const allChildDepts = getAllChildDepts(selectedBusinessUnit);
+    
+    // 只返回叶子部门（没有子部门的部门）
+    const childIds = new Set(allChildDepts.map(d => d.id));
+    return allChildDepts.filter(d => !allChildDepts.some(child => child.parentId === d.id));
+  };
+  
+  const filteredDepartments = getFilteredDepartments();
 
   const filteredUsers = users.filter(user => {
     // 文本搜索过滤（姓名/手机号/部门）
@@ -86,11 +113,30 @@ export default function PersonnelManagementPage() {
       (user.phone ? String(user.phone).toLowerCase().includes(q) : false) ||
       (user.department?.name ? user.department.name.toLowerCase().includes(q) : false);
     
+    // 事业部筛选
+    let matchesBusinessUnit = true;
+    if (selectedBusinessUnit && selectedBusinessUnit !== 'all') {
+      if (selectedBusinessUnit === 'unassigned') {
+        matchesBusinessUnit = !user.department;
+      } else if (user.department?.id) {
+        // 检查用户所在部门是否属于选中的事业部（递归检查父级）
+        const isUnderBusinessUnit = (deptId: string): boolean => {
+          if (deptId === selectedBusinessUnit) return true;
+          const dept = departments.find(d => d.id === deptId);
+          if (!dept || !dept.parentId) return false;
+          return isUnderBusinessUnit(dept.parentId);
+        };
+        matchesBusinessUnit = isUnderBusinessUnit(user.department.id);
+      } else {
+        matchesBusinessUnit = false;
+      }
+    }
+    
     // 部门筛选
     const matchesDepartment = !selectedDepartment || selectedDepartment === 'all' ||
       (selectedDepartment === 'unassigned' ? !user.department : user.department?.id === selectedDepartment);
     
-    return matchesSearch && matchesDepartment;
+    return matchesSearch && matchesBusinessUnit && matchesDepartment;
   });
 
 
@@ -136,14 +182,37 @@ export default function PersonnelManagementPage() {
             />
           </div>
           
-          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+          {/* 事业部筛选 */}
+          <Select value={selectedBusinessUnit} onValueChange={(v) => {
+            setSelectedBusinessUnit(v);
+            setSelectedDepartment(''); // 切换事业部时清空部门选择
+          }}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="筛选事业部" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部事业部</SelectItem>
+              <SelectItem value="unassigned">未分配</SelectItem>
+              {businessUnits.map((bu) => (
+                <SelectItem key={bu.id} value={bu.id}>
+                  {bu.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          {/* 部门筛选（级联） */}
+          <Select 
+            value={selectedDepartment} 
+            onValueChange={setSelectedDepartment}
+            disabled={!selectedBusinessUnit || selectedBusinessUnit === 'all' || selectedBusinessUnit === 'unassigned'}
+          >
             <SelectTrigger className="w-48">
               <SelectValue placeholder="筛选部门" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">全部部门</SelectItem>
-              <SelectItem value="unassigned">未分配</SelectItem>
-              {departments.map((department) => (
+              {filteredDepartments.map((department) => (
                 <SelectItem key={department.id} value={department.id}>
                   {department.name}
                 </SelectItem>

@@ -17,7 +17,15 @@ import {
   Phone,
   Briefcase,
   EyeOff,
-  User
+  User,
+  ChevronDown,
+  ChevronUp,
+  GraduationCap,
+  Landmark,
+  Users,
+  FileText,
+  CreditCard,
+  Paperclip
 } from 'lucide-react';
 
 const maskValue = (value: string | null | undefined, visible: boolean): string => {
@@ -58,6 +66,7 @@ export default function PersonnelDetailPage() {
   const [isHRorSuper, setIsHRorSuper] = useState<boolean>(false);
   const [fieldDefs, setFieldDefs] = useState<Record<string, { label?: string; classification?: string; selfEditable?: boolean }>>({});
   const [deleting, setDeleting] = useState(false);
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const loadUser = async () => {
@@ -100,6 +109,87 @@ export default function PersonnelDetailPage() {
   const shouldShowField = (fieldKey: string) => {
     if (isHRorSuper) return true;
     return visibleKeys.includes(fieldKey);
+  };
+
+  const toggleSection = (sectionKey: string) => {
+    const newCollapsed = new Set(collapsedSections);
+    if (newCollapsed.has(sectionKey)) {
+      newCollapsed.delete(sectionKey);
+    } else {
+      newCollapsed.add(sectionKey);
+    }
+    setCollapsedSections(newCollapsed);
+  };
+
+  const renderSection = ({ key, title, icon, fields }: {
+    key: string;
+    title: string;
+    icon: React.ReactNode;
+    fields: string[];
+  }) => {
+    // 过滤出该分类下可见的字段
+    const visibleFields = fields.filter(fieldKey => {
+      // 检查字段是否存在定义
+      if (!fieldDefs[fieldKey]) return false;
+      // 检查字段是否有值
+      const fv = (user?.fieldValues || []).find(f => f.fieldKey === fieldKey);
+      const hasValue = fv && (fv.valueString || fv.valueNumber || fv.valueDate || fv.valueJson);
+      // 检查权限
+      const canView = shouldShowField(fieldKey);
+      return hasValue && canView;
+    });
+
+    // 如果该分类没有可见字段，不显示这个分类
+    if (visibleFields.length === 0) return null;
+
+    const isCollapsed = collapsedSections.has(key);
+
+    return (
+      <Card key={key}>
+        <CardHeader 
+          className="cursor-pointer hover:bg-muted/50 transition-colors"
+          onClick={() => toggleSection(key)}
+        >
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {icon}
+              <span>{title}</span>
+              <span className="text-sm text-muted-foreground font-normal">
+                ({visibleFields.length})
+              </span>
+            </div>
+            {isCollapsed ? (
+              <ChevronDown className="h-5 w-5 text-muted-foreground" />
+            ) : (
+              <ChevronUp className="h-5 w-5 text-muted-foreground" />
+            )}
+          </CardTitle>
+        </CardHeader>
+        {!isCollapsed && (
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {visibleFields.map((fieldKey) => {
+                const label = fieldDefs[fieldKey]?.label || fieldKey;
+                const fv = (user?.fieldValues || []).find(f => f.fieldKey === fieldKey);
+                const value = fv?.valueString || fv?.valueNumber || fv?.valueDate || fv?.valueJson || '';
+                const visible = visibleKeys.includes(fieldKey) || isHRorSuper;
+                const displayValue = value ? renderFieldValue(fieldKey, value) : '-';
+                
+                return (
+                  <div key={fieldKey} className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm font-medium text-muted-foreground">{label}</label>
+                      {!visible && <EyeOff className="h-3 w-3 text-muted-foreground" />}
+                    </div>
+                    <p className="text-sm">{displayValue}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        )}
+      </Card>
+    );
   };
 
 
@@ -243,77 +333,97 @@ export default function PersonnelDetailPage() {
               </Card>
             </div>
 
-            <div className="lg:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    详细信息
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {(() => {
-                      // 按照人员导入模板 (4).csv 的字段顺序排列
-                      const csvOrder = [
-                        '姓名', '员工编码', '状态', '员工类别', '序列', '直属领导', '事业部', '事业部负责人', '部门', '岗位', '标签',
-                        '加入公司日期', '实习试用期（月）', '实习转正日期', '入职日期', '试用期（月）', '转正日期',
-                        '主身份标识', '身份证/护照号码', '证件有效期', '到期剩余', '银行账号', '开户行', '社保电脑号', '个人公积金账号',
-                        '性别', '出生日期', '年龄', '身高cm', '体重kg', '血型', '以往病史', '国籍', '民族', '籍贯-省市', '政治面貌',
-                        '首次参加工作日期', '工龄计算使用日期', '工龄', '户籍类型', '户籍-省', '户籍-市', '户籍（户口所在地）', '身份证地址',
-                        '联系电话', 'QQ', '微信', 'Email', '现居住地址（门牌号）', '紧急联系人姓名', '关系', '紧急联系人电话', '紧急联系人住址',
-                        '学历', '入学日期', '所学专业', '学习形式', '学制(年)', '学位授予国家', '学位授予单位', '学位授予日期', '毕业学校', '毕业日期', '外语级别',
-                        '婚姻状况', '婚假情况', '婚假日期', '配偶姓名', '配偶电话', '配偶任职单位', '配偶岗位',
-                        '入职次数', '前次入职时间', '前次离职时间', '前次任职企业', '竞业协议',
-                        '合同类型', '签订次数', '最新合同起始', '最新合同终止', '合同剩余天数',
-                        '离职时间', '离职类型', '离职原因分类', '离职具体原因', '备注'
-                      ];
-                      
-                      // 通过字段定义找到对应的key
-                      const labelToKey = new Map<string, string>();
-                      Object.entries(fieldDefs || {}).forEach(([key, def]) => {
-                        if (def.label) labelToKey.set(def.label, key);
-                      });
-                      
-                      // 按CSV顺序排列字段
-                      const orderedKeys: string[] = [];
-                      csvOrder.forEach(label => {
-                        const key = labelToKey.get(label);
-                        if (key && shouldShowField(key)) {
-                          orderedKeys.push(key);
-                        }
-                      });
-                      
-                      // 添加未在CSV模板中的其他字段
-                      Object.keys(fieldDefs || {}).forEach(key => {
-                        if (!orderedKeys.includes(key) && shouldShowField(key)) {
-                          orderedKeys.push(key);
-                        }
-                      });
-                      
-                      return orderedKeys.map((key) => {
-                        const label = fieldDefs[key]?.label || key;
-                        const fv = (user.fieldValues || []).find(f => f.fieldKey === key);
-                        const value = fv?.valueString || fv?.valueNumber || fv?.valueDate || fv?.valueJson || '';
-                        const visible = visibleKeys.includes(key) || isHRorSuper;
-                        const displayValue = value ? renderFieldValue(key, value) : '-';
-                        
-                        return (
-                          <div key={key} className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <label className="text-sm font-medium text-muted-foreground">{label}</label>
-                              {!visible && <EyeOff className="h-3 w-3 text-muted-foreground" />}
-                            </div>
-                            <p className="text-sm">{displayValue}</p>
-                          </div>
-                        );
-                      });
-                    })()}
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="lg:col-span-2 space-y-4">
+              {/* 工作信息 */}
+              {renderSection({
+                key: 'workInfo',
+                title: '工作信息',
+                icon: <Briefcase className="h-5 w-5" />,
+                fields: ['employee_code', 'employee_status', 'employee_type', 'career_sequence', 
+                        'reporting_manager', 'business_unit', 'business_unit_leader', 'department', 
+                        'position', 'tag', 'join_company_date', 'internship_period_months', 
+                        'internship_to_regular_date', 'onboarding_date', 'probation_period_months', 
+                        'regularization_date']
+              })}
 
-              {/* 详情页不再分分类板块，全部字段已在上方展示 */}
+              {/* 个人信息 */}
+              {renderSection({
+                key: 'personalInfo',
+                title: '个人信息',
+                icon: <User className="h-5 w-5" />,
+                fields: ['gender', 'birth_date', 'age', 'height_cm', 'weight_kg', 'blood_type', 
+                        'medical_history', 'nationality', 'ethnicity', 'ancestral_home_province_city', 
+                        'political_status', 'first_work_date', 'seniority_calculation_date', 
+                        'work_years', 'household_registration_type', 'household_province', 
+                        'household_city', 'household_address', 'id_address', 'contact_phone', 
+                        'qq', 'wechat', 'personal_email', 'current_residence_address']
+              })}
+
+              {/* 证件信息 */}
+              {renderSection({
+                key: 'documentInfo',
+                title: '证件信息',
+                icon: <FileText className="h-5 w-5" />,
+                fields: ['primary_id_type', 'id_number', 'id_valid_until', 'id_days_remaining']
+              })}
+
+              {/* 银行卡信息 */}
+              {renderSection({
+                key: 'bankInfo',
+                title: '银行卡信息',
+                icon: <Landmark className="h-5 w-5" />,
+                fields: ['bank_account_number', 'bank_name', 'social_security_number', 
+                        'provident_fund_account']
+              })}
+
+              {/* 合同信息 */}
+              {renderSection({
+                key: 'contractInfo',
+                title: '合同信息',
+                icon: <CreditCard className="h-5 w-5" />,
+                fields: ['contract_type', 'contract_signed_times', 'latest_contract_start', 
+                        'latest_contract_end', 'contract_remaining_days']
+              })}
+
+              {/* 教育经历 */}
+              {renderSection({
+                key: 'educationInfo',
+                title: '教育经历',
+                icon: <GraduationCap className="h-5 w-5" />,
+                fields: ['education_degree', 'enrollment_date', 'major', 'study_form', 
+                        'schooling_years', 'degree_awarding_country', 'degree_awarding_institution', 
+                        'degree_awarding_date', 'graduation_school', 'graduation_date', 
+                        'foreign_language_level']
+              })}
+
+              {/* 家庭信息 */}
+              {renderSection({
+                key: 'familyInfo',
+                title: '家庭与婚姻',
+                icon: <Users className="h-5 w-5" />,
+                fields: ['marital_status', 'marriage_leave_status', 'marriage_leave_date', 
+                        'spouse_name', 'spouse_phone', 'spouse_employer', 'spouse_position',
+                        'emergency_contact_name', 'emergency_contact_relation', 
+                        'emergency_contact_phone', 'emergency_contact_address']
+              })}
+
+              {/* 工作履历 */}
+              {renderSection({
+                key: 'workHistory',
+                title: '工作履历',
+                icon: <Briefcase className="h-5 w-5" />,
+                fields: ['rehire_count', 'previous_join_date', 'previous_leave_date', 
+                        'previous_employer', 'non_compete_agreement']
+              })}
+
+              {/* 离职信息（如果有） */}
+              {renderSection({
+                key: 'resignationInfo',
+                title: '离职信息',
+                icon: <FileText className="h-5 w-5" />,
+                fields: ['resignation_date', 'resignation_type', 'resignation_reason_category', 
+                        'resignation_reason_detail', 'remarks']
+              })}
             </div>
           </div>
         </div>

@@ -68,10 +68,29 @@ export enum Priority {
 
 // 输入源枚举
 export enum InputSource {
+  FEEDBACK = 'FEEDBACK',
+  BUG = 'BUG',
   USER_FEEDBACK = 'USER_FEEDBACK',
   INTERNAL = 'INTERNAL',
   DATA_ANALYSIS = 'DATA_ANALYSIS',
   STRATEGY = 'STRATEGY'
+}
+
+// 需求阶段枚举
+export enum DemandStage {
+  FEEDBACK = 'FEEDBACK',
+  SCHEDULED = 'SCHEDULED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  RELEASED = 'RELEASED',
+  REJECTED = 'REJECTED',
+  ARCHIVED = 'ARCHIVED'
+}
+
+// 同步来源枚举
+export enum SyncSource {
+  GITLAB = 'GITLAB',
+  INTERNAL = 'INTERNAL',
+  WEBHOOK = 'WEBHOOK'
 }
 
 // Issue类型枚举
@@ -104,6 +123,24 @@ export interface Issue {
   comments: IssueComment[];
   tasks: Task[];
   prds: PRD[];
+  // GitLab 同步字段
+  gitlabProjectId?: number;
+  gitlabIssueIid?: number;
+  gitlabIssueId?: number;
+  gitlabUrl?: string;
+  gitlabLabels?: string[];
+  gitlabState?: string;
+  gitlabAuthorId?: number;
+  gitlabAssigneeId?: number;
+  gitlabCreatedAt?: string;
+  gitlabUpdatedAt?: string;
+  // 需求管理字段
+  stage?: DemandStage;
+  syncSource?: SyncSource;
+  lastSyncedAt?: string;
+  syncVersion?: number;
+  parentIssueId?: string;
+  subIssues?: Issue[];
 }
 
 // API响应类型

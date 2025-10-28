@@ -16,9 +16,18 @@ interface BreadcrumbItem {
 // 根据路径生成面包屑
 function generateBreadcrumbs(pathname: string): BreadcrumbItem[] {
   const segments = pathname.split('/').filter(Boolean)
-  const breadcrumbs: BreadcrumbItem[] = [
-    { title: "首页", href: "/kanban" }
-  ]
+  const breadcrumbs: BreadcrumbItem[] = []
+  
+  // 页面名称映射
+  const pageMap: Record<string, string> = {
+    "demand_pool": "需求池",
+    "scheduled": "版本管理",
+    "kanban": "个人任务",
+    "directory": "通讯录",
+    "personnel": "人员管理",
+    "requirements": "需求管理",
+    "issues": "需求详情"
+  }
 
   // 人员管理相关路径
   if (segments[0] === 'personnel') {
@@ -49,14 +58,14 @@ function generateBreadcrumbs(pathname: string): BreadcrumbItem[] {
     }
   }
   
+  // 需求池详情页
+  else if (segments[0] === 'demand_pool' && segments[1]) {
+    breadcrumbs.push({ title: "需求池", href: "/demand_pool" })
+    breadcrumbs.push({ title: "需求详情" })
+  }
+  
   // 其他路径的默认处理
   else {
-    const pageMap: Record<string, string> = {
-      "requirements": "需求池",
-      "kanban": "任务看板",
-      "issues": "Issues"
-    }
-    
     segments.forEach((segment, index) => {
       const title = pageMap[segment] || segment
       const href = index === segments.length - 1 ? undefined : '/' + segments.slice(0, index + 1).join('/')
@@ -92,11 +101,7 @@ export function SiteHeader() {
                   href={crumb.href}
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {index === 0 ? (
-                    <Home className="h-4 w-4" />
-                  ) : (
-                    crumb.title
-                  )}
+                  {crumb.title}
                 </Link>
               ) : (
                 <span className="font-medium text-foreground">

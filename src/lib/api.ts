@@ -206,6 +206,21 @@ export const issueApi = {
                 name
               }
             }
+            gitlabProjectId
+            gitlabIssueIid
+            gitlabIssueId
+            gitlabUrl
+            gitlabLabels
+            gitlabState
+            gitlabAuthorId
+            gitlabAssigneeId
+            gitlabCreatedAt
+            gitlabUpdatedAt
+            stage
+            syncSource
+            lastSyncedAt
+            syncVersion
+            parentIssueId
           }
           total
           hasMore
@@ -280,6 +295,21 @@ export const issueApi = {
               name
             }
           }
+          gitlabProjectId
+          gitlabIssueIid
+          gitlabIssueId
+          gitlabUrl
+          gitlabLabels
+          gitlabState
+          gitlabAuthorId
+          gitlabAssigneeId
+          gitlabCreatedAt
+          gitlabUpdatedAt
+          stage
+          syncSource
+          lastSyncedAt
+          syncVersion
+          parentIssueId
         }
       }
     `;
@@ -372,6 +402,50 @@ export const issueApi = {
     `;
 
     return graphqlRequest(query, { projectId });
+  },
+
+  // 评审通过需求（需求池 -> 排期需求）
+  async approveIssue(issueId: string, pmUserId: string) {
+    const query = `
+      mutation ApproveIssue($issueId: ID!, $pmUserId: ID!) {
+        approveIssue(issueId: $issueId, pmUserId: $pmUserId) {
+          id
+          stage
+          status
+          assignee {
+            id
+            name
+            email
+          }
+        }
+      }
+    `;
+
+    return graphqlRequest(query, { issueId, pmUserId });
+  },
+
+  // 拆分需求为子任务
+  async splitIssue(issueId: string, subTasks: Array<{
+    role: 'FRONTEND' | 'BACKEND' | 'QA' | 'DESIGN' | 'OPS';
+    assigneeId?: string;
+    title?: string;
+    description?: string;
+  }>) {
+    const query = `
+      mutation SplitIssue($issueId: ID!, $subTasks: [String!]!) {
+        splitIssue(issueId: $issueId, subTasks: $subTasks) {
+          id
+          title
+          stage
+          parentIssueId
+        }
+      }
+    `;
+
+    // 将 subTasks 转换为 JSON 字符串数组
+    const subTasksJson = subTasks.map(task => JSON.stringify(task));
+
+    return graphqlRequest(query, { issueId, subTasks: subTasksJson });
   },
 };
 

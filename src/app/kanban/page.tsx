@@ -251,7 +251,18 @@ const KanbanPage: FC = () => {
   };
 
   // 转换用户数据为AnimatedTooltip格式
-  const teamMembers = users.map((user, index) => ({
+  // 按任务数量排序，取前8个
+  const userTaskCounts = users.map(user => ({
+    user,
+    taskCount: tasks.filter(task => task.assigneeId === user.id).length,
+  }));
+  
+  const topUsers = userTaskCounts
+    .sort((a, b) => b.taskCount - a.taskCount)
+    .slice(0, 8) // 最多显示8个
+    .map(({ user }) => user);
+  
+  const teamMembers = topUsers.map((user, index) => ({
     id: index + 1, // AnimatedTooltip需要number类型的id
     name: user.name,
     designation: '成员', // 简化为固定值，因为User类型没有roles字段

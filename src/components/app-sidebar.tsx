@@ -37,18 +37,18 @@ const data = {
   navMain: [
     {
       title: "需求池",
-      url: "/requirements",
+      url: "/demand_pool",
       icon: Inbox,
     },
     {
-      title: "任务看板",
-      url: "/kanban",
-      icon: Kanban,
+      title: "版本管理",
+      url: "/scheduled",
+      icon: MessageSquare,
     },
     {
-      title: "Issues",
-      url: "/issues",
-      icon: MessageSquare,
+      title: "个人任务",
+      url: "/kanban",
+      icon: Kanban,
     },
     {
       title: "通讯录",

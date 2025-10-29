@@ -242,7 +242,7 @@ export default function FieldConfigPage() {
                     
                     {fields.length === 0 && (
                       <div className="col-span-2 text-center text-muted-foreground text-sm py-8">
-                        暂无字段，点击"添加字段"创建
+                        暂无字段，点击&quot;添加字段&quot;创建
                       </div>
                     )}
                   </div>

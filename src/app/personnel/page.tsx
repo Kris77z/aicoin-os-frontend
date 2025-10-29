@@ -35,6 +35,9 @@ interface User {
 interface Department {
   id: string;
   name: string;
+  parentId?: string;
+  companyId?: string;
+  leaderUserIds?: string[];
 }
 
 export default function PersonnelManagementPage() {

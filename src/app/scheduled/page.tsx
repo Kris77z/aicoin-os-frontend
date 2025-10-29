@@ -87,7 +87,7 @@ export default function VersionManagementPage() {
       
       // 前端筛选：只显示 gitlabProjectId === 1206 的Issue
       const versionIssues = response.issues.issues.filter(
-        issue => issue.gitlabProjectId === 1206
+        (issue: Issue) => issue.gitlabProjectId === 1206
       );
       
       console.log('版本管理数据:', versionIssues.length, '条（来自pm/issues项目 1206）');
@@ -95,7 +95,7 @@ export default function VersionManagementPage() {
       
       // 提取版本列表（从labels中提取V:开头的标签）
       const versionSet = new Set<string>();
-      versionIssues.forEach(issue => {
+      versionIssues.forEach((issue: Issue) => {
         if (issue.gitlabLabels) {
           issue.gitlabLabels.forEach(label => {
             if (label.startsWith('V:')) {

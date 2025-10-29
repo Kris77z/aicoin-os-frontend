@@ -68,8 +68,6 @@ export enum Priority {
 
 // 输入源枚举
 export enum InputSource {
-  FEEDBACK = 'FEEDBACK',
-  BUG = 'BUG',
   USER_FEEDBACK = 'USER_FEEDBACK',
   INTERNAL = 'INTERNAL',
   DATA_ANALYSIS = 'DATA_ANALYSIS',
